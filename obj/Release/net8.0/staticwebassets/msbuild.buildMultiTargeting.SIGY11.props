@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\SIGY11.props" />
+</Project>

@@ -1,0 +1,190 @@
+﻿@page "/signals"
+@inject HttpClient Http
+
+<h3>Trading Signals</h3>
+
+@if (isLoading)
+{
+    <p>Loading signals...</p>
+}
+else if (signals != null && signals.Count > 0)
+{
+    foreach (var signal in signals)
+    {
+        <div>
+            <h4>@signal.Symbol</h4>
+            <p>@signal.Rationale</p>
+            <p>Entry Point: @signal.EntryPoint</p>
+            <p>Stop Loss: @signal.StopLoss</p>
+            <p>Take Profit: @signal.TakeProfit</p>
+        </div>
+    }
+}
+else
+{
+    <p>No signals available.</p>
+}
+
+<!-- PayFast Button -->
+<div>
+    <h4>Access Signals for $29</h4>
+    <div id="payfast-button-container"></div>
+</div>
+
+@code {
+    private List<Signal> signals = new();
+    private bool isLoading = true;
+    private string apiKey = "N3028IPGPX7SVW1F"; // Your API key
+
+    // PayFast Merchant Details
+    private string merchantId = "25678419";
+    private string merchantKey = "u6s69ebzgxyup";
+    private decimal signalPrice = 29.00m; // Price for each set of signals
+
+    protected override async Task OnInitializedAsync()
+    {
+        signals = await GenerateTradingSignals();
+        isLoading = false;
+        InitializePayFast();
+    }
+
+    private async Task<List<Signal>> GenerateTradingSignals()
+    {
+        // Adjusted symbol lists for different types of signals
+        var symbols = new List<string> { "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA" }; // Example for stocks
+        var tradingSignals = new List<Signal>();
+
+        foreach (var symbol in symbols)
+        {
+            var signal = await FetchSignalForSymbol(symbol);
+            if (signal != null)
+            {
+                tradingSignals.Add(signal);
+            }
+        }
+
+        return tradingSignals;
+    }
+
+    private async Task<Signal> FetchSignalForSymbol(string symbol)
+    {
+        var alphaPrices = await FetchDataFromAlphaVantage(symbol);
+        var yahooPrices = await FetchDataFromYahooFinance(symbol);
+
+        if (alphaPrices == null && yahooPrices == null)
+            return null;
+
+        var combinedPrices = CombinePrices(alphaPrices, yahooPrices);
+        var monthlyPrices = CalculateMonthlyAverage(combinedPrices);
+        var (shortEma, longEma) = (CalculateEma(monthlyPrices, 12), CalculateEma(monthlyPrices, 26));
+
+        // Generate signals based on EMAs
+        if (shortEma.HasValue && longEma.HasValue)
+        {
+            var latestPrice = monthlyPrices[0].AveragePrice; // Adjusted to use average price
+            return GenerateSignal(symbol, latestPrice, shortEma.Value, longEma.Value);
+        }
+
+        return null;
+    }
+
+    private Signal GenerateSignal(string symbol, decimal latestPrice, decimal shortEma, decimal longEma)
+    {
+        decimal entryPoint = latestPrice;
+        decimal stopLoss, takeProfit;
+        string rationale;
+
+        if (shortEma > longEma)
+        {
+            stopLoss = entryPoint * 0.95m;
+            takeProfit = entryPoint * 1.10m;
+            rationale = "Bullish trend indicated by EMA crossover.";
+        }
+        else
+        {
+            stopLoss = entryPoint * 1.05m;
+            takeProfit = entryPoint * 0.90m;
+            rationale = "Bearish trend indicated by EMA crossover.";
+        }
+
+        return new Signal
+            {
+                Symbol = symbol,
+                Rationale = rationale,
+                EntryPoint = entryPoint,
+                StopLoss = stopLoss,
+                TakeProfit = takeProfit
+            };
+    }
+
+    private async Task<List<PriceData>> FetchDataFromAlphaVantage(string symbol)
+    {
+        // Implement the data fetching logic here...
+        return await Task.FromResult(new List<PriceData>()); // Replace with actual fetched data
+    }
+
+    private async Task<List<PriceData>> FetchDataFromYahooFinance(string symbol)
+    {
+        // Implement the data fetching logic here...
+        return await Task.FromResult(new List<PriceData>()); // Replace with actual fetched data
+    }
+
+    private List<PriceData> CombinePrices(List<PriceData> alphaPrices, List<PriceData> yahooPrices)
+    {
+        // Implement the combination logic here...
+        return new List<PriceData>(); // Replace with actual combined data
+    }
+
+    private List<MonthlyAverage> CalculateMonthlyAverage(List<PriceData> prices)
+    {
+        // Implement the monthly average calculations...
+        return new List<MonthlyAverage>(); // Replace with actual calculations
+    }
+
+    private decimal? CalculateEma(List<MonthlyAverage> prices, int period)
+    {
+        // Implement the EMA calculation...
+        return null; // Replace with actual EMA calculation
+    }
+
+    private void InitializePayFast()
+    {
+        var script = $@"
+            <script src='https://www.payfast.co.za/eng/process'></script>
+            <script>
+                // PayFast payment integration logic
+                var payfast = new PayFast({{
+                    merchantId: '{merchantId}',
+                    merchantKey: '{merchantKey}',
+                    amount: {signalPrice},
+                    email: 'mateumolepo11@gmail.com',
+                    phone: '0734248163',
+                    // Additional PayFast parameters as needed
+                }});
+            </script>";
+
+        // Inject the PayFast script into the page
+        // Assuming the logic for injecting the script is handled here
+    }
+
+    public class Signal
+    {
+        public required string Symbol { get; set; } = null!;
+        public required string Rationale { get; set; } = null!;
+        public decimal EntryPoint { get; set; }
+        public decimal StopLoss { get; set; }
+        public decimal TakeProfit { get; set; }
+    }
+
+    public class PriceData
+    {
+        public required string Date { get; set; } = null!;
+        public decimal Price { get; set; }
+    }
+
+    public class MonthlyAverage
+    {
+        public required string Month { get; set; } = null!;
+        public decimal AveragePrice { get; set; }
+    }
+}
