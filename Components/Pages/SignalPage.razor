@@ -25,10 +25,10 @@ else
     <p>No signals available.</p>
 }
 
-<!-- PayFast Button -->
+<!-- PayPal Button -->
 <div>
-    <h4>Access Signals for $29</h4>
-    <div id="payfast-button-container"></div>
+    <h4>Access 5 Signals for R100</h4>
+    <div id="paypal-button-container"></div>
 </div>
 
 @code {
@@ -36,22 +36,20 @@ else
     private bool isLoading = true;
     private string apiKey = "N3028IPGPX7SVW1F"; // Your API key
 
-    // PayFast Merchant Details
-    private string merchantId = "25678419";
-    private string merchantKey = "u6s69ebzgxyup";
-    private decimal signalPrice = 29.00m; // Price for each set of signals
+    // PayPal Merchant Details
+    private string merchantId = "HXMXS6HVENELE"; // PayPal Merchant ID
+    private decimal signalPrice = 100.00m; // Price for 5 signals
 
     protected override async Task OnInitializedAsync()
     {
-        signals = await GenerateTradingSignals();
+        signals = await GenerateTradingSignals() ?? new List<Signal>();
         isLoading = false;
-        InitializePayFast();
+        InitializePayPal();
     }
 
     private async Task<List<Signal>> GenerateTradingSignals()
     {
-        // Adjusted symbol lists for different types of signals
-        var symbols = new List<string> { "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA" }; // Example for stocks
+        var symbols = new List<string> { "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA" };
         var tradingSignals = new List<Signal>();
 
         foreach (var symbol in symbols)
@@ -68,20 +66,19 @@ else
 
     private async Task<Signal> FetchSignalForSymbol(string symbol)
     {
-        var alphaPrices = await FetchDataFromAlphaVantage(symbol);
-        var yahooPrices = await FetchDataFromYahooFinance(symbol);
+        var alphaPrices = await FetchDataFromAlphaVantage(symbol) ?? new List<PriceData>();
+        var yahooPrices = await FetchDataFromYahooFinance(symbol) ?? new List<PriceData>();
 
-        if (alphaPrices == null && yahooPrices == null)
+        if (!alphaPrices.Any() && !yahooPrices.Any())
             return null;
 
         var combinedPrices = CombinePrices(alphaPrices, yahooPrices);
         var monthlyPrices = CalculateMonthlyAverage(combinedPrices);
         var (shortEma, longEma) = (CalculateEma(monthlyPrices, 12), CalculateEma(monthlyPrices, 26));
 
-        // Generate signals based on EMAs
         if (shortEma.HasValue && longEma.HasValue)
         {
-            var latestPrice = monthlyPrices[0].AveragePrice; // Adjusted to use average price
+            var latestPrice = monthlyPrices[0].AveragePrice;
             return GenerateSignal(symbol, latestPrice, shortEma.Value, longEma.Value);
         }
 
@@ -147,23 +144,31 @@ else
         return null; // Replace with actual EMA calculation
     }
 
-    private void InitializePayFast()
+    private void InitializePayPal()
     {
         var script = $@"
-            <script src='https://www.payfast.co.za/eng/process'></script>
+            <script src='https://www.paypal.com/sdk/js?client-id={merchantId}'></script>
             <script>
-                // PayFast payment integration logic
-                var payfast = new PayFast({{
-                    merchantId: '{merchantId}',
-                    merchantKey: '{merchantKey}',
-                    amount: {signalPrice},
-                    email: 'mateumolepo11@gmail.com',
-                    phone: '0734248163',
-                    // Additional PayFast parameters as needed
-                }});
+                paypal.Buttons({{
+                    createOrder: function(data, actions) {{
+                        return actions.order.create({{
+                            purchase_units: [{{
+                                amount: {{
+                                    value: '{signalPrice}'
+                                }}
+                            }}]
+                        }});
+                    }},
+                    onApprove: function(data, actions) {{
+                        return actions.order.capture().then(function(details) {{
+                            alert('Transaction completed by ' + details.payer.name.given_name);
+                            // Handle successful transaction logic here
+                        }});
+                    }}
+                }}).render('#paypal-button-container');
             </script>";
 
-        // Inject the PayFast script into the page
+        // Inject the PayPal script into the page
         // Assuming the logic for injecting the script is handled here
     }
 
