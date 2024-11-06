@@ -1,5 +1,6 @@
 ﻿@page "/signals"
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime
 
 <h3>Trading Signals</h3>
 
@@ -35,9 +36,8 @@ else
     private List<Signal> signals = new();
     private bool isLoading = true;
 
-    // PayPal Merchant Details (Read from config.json)
-    private string paypalClientId = string.Empty;  // PayPal Client ID (from config.json)
-    private decimal signalPrice = 100.00m; // Price for 5 signals (from config.json)
+    private string paypalClientId = "AXEBIxFQXxIPCaamboADh1yhvTuny5OvvXRVEmtYPy8R8fM5sNZqJyfDCvc6v4ASDvhq2n-FiKroEQBX"; // Your actual Client ID
+    private decimal signalPrice = 100.00m; // Price for 5 signals
 
     // Initialize when component is ready
     protected override async Task OnInitializedAsync()
@@ -45,8 +45,8 @@ else
         signals = await FetchSignalsFromJsonFile() ?? new List<Signal>();
         isLoading = false;
 
-        // Initialize PayPal with the client ID and signal price from the config
-        InitializePayPal();
+        // Initialize PayPal with the client ID and signal price
+        await InitializePayPal();
     }
 
     // Fetch the trading signals from config.json
@@ -75,10 +75,11 @@ else
     }
 
     // Initialize PayPal button integration with JS interop
-    private void InitializePayPal()
+    private async Task InitializePayPal()
     {
+        // Prepare the script to inject
         var script = $@"
-            <script src='https://www.paypal.com/sdk/js?client-id={paypalClientId}'></script>
+            <script src='https://www.paypal.com/sdk/js?client-id={paypalClientId}&components=buttons'></script>
             <script>
                 paypal.Buttons({{
                     createOrder: function(data, actions) {{
@@ -99,7 +100,8 @@ else
                 }}).render('#paypal-button-container');
             </script>";
 
-        // Inject the PayPal script into the page (depending on your setup for JS interop in Blazor)
+        // Use JSInterop to inject the PayPal script into the page
+        await JSRuntime.InvokeVoidAsync("eval", script);
     }
 
     // Signal class to match the structure from Python (Lonsigy1.py)
@@ -132,3 +134,4 @@ else
         public List<Signal> Signals { get; set; } = new List<Signal>();  // Initialize the list to avoid nullability warning
     }
 }
+
