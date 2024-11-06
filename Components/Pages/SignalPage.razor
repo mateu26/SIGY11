@@ -34,120 +34,51 @@ else
 @code {
     private List<Signal> signals = new();
     private bool isLoading = true;
-    private string apiKey = "N3028IPGPX7SVW1F"; // Your API key
 
-    // PayPal Merchant Details
-    private string merchantId = "HXMXS6HVENELE"; // PayPal Merchant ID
-    private decimal signalPrice = 100.00m; // Price for 5 signals
+    // PayPal Merchant Details (Read from config.json)
+    private string paypalClientId = string.Empty;  // PayPal Client ID (from config.json)
+    private decimal signalPrice = 100.00m; // Price for 5 signals (from config.json)
 
+    // Initialize when component is ready
     protected override async Task OnInitializedAsync()
     {
-        signals = await GenerateTradingSignals() ?? new List<Signal>();
+        signals = await FetchSignalsFromJsonFile() ?? new List<Signal>();
         isLoading = false;
+
+        // Initialize PayPal with the client ID and signal price from the config
         InitializePayPal();
     }
 
-    private async Task<List<Signal>> GenerateTradingSignals()
+    // Fetch the trading signals from config.json
+    private async Task<List<Signal>> FetchSignalsFromJsonFile()
     {
-        var symbols = new List<string> { "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA" };
-        var tradingSignals = new List<Signal>();
-
-        foreach (var symbol in symbols)
+        try
         {
-            var signal = await FetchSignalForSymbol(symbol);
-            if (signal != null)
+            // Fetch the signals from the config.json file
+            var response = await Http.GetFromJsonAsync<TradingSignals>("config.json");
+
+            // Update PayPal details from config.json
+            if (response?.PayPal != null)
             {
-                tradingSignals.Add(signal);
+                paypalClientId = response.PayPal.ClientId;
+                signalPrice = response.PayPal.SignalPrice;
             }
+
+            // Return the list of signals from config.json or an empty list
+            return response?.SignalsInfo?.Signals ?? new List<Signal>();
         }
-
-        return tradingSignals;
-    }
-
-    private async Task<Signal> FetchSignalForSymbol(string symbol)
-    {
-        var alphaPrices = await FetchDataFromAlphaVantage(symbol) ?? new List<PriceData>();
-        var yahooPrices = await FetchDataFromYahooFinance(symbol) ?? new List<PriceData>();
-
-        if (!alphaPrices.Any() && !yahooPrices.Any())
-            return null;
-
-        var combinedPrices = CombinePrices(alphaPrices, yahooPrices);
-        var monthlyPrices = CalculateMonthlyAverage(combinedPrices);
-        var (shortEma, longEma) = (CalculateEma(monthlyPrices, 12), CalculateEma(monthlyPrices, 26));
-
-        if (shortEma.HasValue && longEma.HasValue)
+        catch (Exception ex)
         {
-            var latestPrice = monthlyPrices[0].AveragePrice;
-            return GenerateSignal(symbol, latestPrice, shortEma.Value, longEma.Value);
+            Console.WriteLine($"Error fetching signals: {ex.Message}");
+            return new List<Signal>(); // Return empty list on error
         }
-
-        return null;
     }
 
-    private Signal GenerateSignal(string symbol, decimal latestPrice, decimal shortEma, decimal longEma)
-    {
-        decimal entryPoint = latestPrice;
-        decimal stopLoss, takeProfit;
-        string rationale;
-
-        if (shortEma > longEma)
-        {
-            stopLoss = entryPoint * 0.95m;
-            takeProfit = entryPoint * 1.10m;
-            rationale = "Bullish trend indicated by EMA crossover.";
-        }
-        else
-        {
-            stopLoss = entryPoint * 1.05m;
-            takeProfit = entryPoint * 0.90m;
-            rationale = "Bearish trend indicated by EMA crossover.";
-        }
-
-        return new Signal
-            {
-                Symbol = symbol,
-                Rationale = rationale,
-                EntryPoint = entryPoint,
-                StopLoss = stopLoss,
-                TakeProfit = takeProfit
-            };
-    }
-
-    private async Task<List<PriceData>> FetchDataFromAlphaVantage(string symbol)
-    {
-        // Implement the data fetching logic here...
-        return await Task.FromResult(new List<PriceData>()); // Replace with actual fetched data
-    }
-
-    private async Task<List<PriceData>> FetchDataFromYahooFinance(string symbol)
-    {
-        // Implement the data fetching logic here...
-        return await Task.FromResult(new List<PriceData>()); // Replace with actual fetched data
-    }
-
-    private List<PriceData> CombinePrices(List<PriceData> alphaPrices, List<PriceData> yahooPrices)
-    {
-        // Implement the combination logic here...
-        return new List<PriceData>(); // Replace with actual combined data
-    }
-
-    private List<MonthlyAverage> CalculateMonthlyAverage(List<PriceData> prices)
-    {
-        // Implement the monthly average calculations...
-        return new List<MonthlyAverage>(); // Replace with actual calculations
-    }
-
-    private decimal? CalculateEma(List<MonthlyAverage> prices, int period)
-    {
-        // Implement the EMA calculation...
-        return null; // Replace with actual EMA calculation
-    }
-
+    // Initialize PayPal button integration with JS interop
     private void InitializePayPal()
     {
         var script = $@"
-            <script src='https://www.paypal.com/sdk/js?client-id={merchantId}'></script>
+            <script src='https://www.paypal.com/sdk/js?client-id={paypalClientId}'></script>
             <script>
                 paypal.Buttons({{
                     createOrder: function(data, actions) {{
@@ -168,28 +99,36 @@ else
                 }}).render('#paypal-button-container');
             </script>";
 
-        // Inject the PayPal script into the page
-        // Assuming the logic for injecting the script is handled here
+        // Inject the PayPal script into the page (depending on your setup for JS interop in Blazor)
     }
 
+    // Signal class to match the structure from Python (Lonsigy1.py)
     public class Signal
     {
-        public required string Symbol { get; set; } = null!;
-        public required string Rationale { get; set; } = null!;
+        public string Symbol { get; set; } = string.Empty;  // Initialize to avoid nullability warning
+        public string Rationale { get; set; } = string.Empty;  // Initialize to avoid nullability warning
         public decimal EntryPoint { get; set; }
         public decimal StopLoss { get; set; }
         public decimal TakeProfit { get; set; }
     }
 
-    public class PriceData
+    // Class for data structure in config.json
+    public class TradingSignals
     {
-        public required string Date { get; set; } = null!;
-        public decimal Price { get; set; }
+        public PayPalInfo PayPal { get; set; } = new PayPalInfo();  // Initialize the PayPalInfo object
+        public TradingSignalsInfo SignalsInfo { get; set; } = new TradingSignalsInfo();  // Initialize the SignalsInfo object
     }
 
-    public class MonthlyAverage
+    // PayPal details structure
+    public class PayPalInfo
     {
-        public required string Month { get; set; } = null!;
-        public decimal AveragePrice { get; set; }
+        public string ClientId { get; set; } = string.Empty;  // Initialize to avoid nullability warning
+        public decimal SignalPrice { get; set; }
+    }
+
+    // Trading signals structure (matching the signals from the Python code)
+    public class TradingSignalsInfo
+    {
+        public List<Signal> Signals { get; set; } = new List<Signal>();  // Initialize the list to avoid nullability warning
     }
 }

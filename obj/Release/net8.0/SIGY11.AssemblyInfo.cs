@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SIGY11")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6a03e56f06a5ad04ada10cef321af9b0d295b1b5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57ec001ef943e006956b06685da3fa9c6e77e231")]
 [assembly: System.Reflection.AssemblyProductAttribute("SIGY11")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SIGY11")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

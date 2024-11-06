@@ -5,7 +5,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 <Project>
   <PropertyGroup>
     <_PublishTargetUrl>C:\Users\Margaret\source\repos\SIGY11\bin\Release\net8.0\publish\</_PublishTargetUrl>
-    <History>True|2024-11-04T11:03:38.0316270Z||;True|2024-11-01T14:27:52.6413411+02:00||;False|2024-11-01T14:11:56.5900564+02:00||;False|2024-11-01T11:33:10.3410940+02:00||;True|2024-10-29T09:25:47.9967391+02:00||;</History>
+    <History>True|2024-11-06T11:25:23.5366981Z||;True|2024-11-06T13:14:12.6624922+02:00||;True|2024-11-04T13:03:38.0316270+02:00||;True|2024-11-01T14:27:52.6413411+02:00||;False|2024-11-01T14:11:56.5900564+02:00||;False|2024-11-01T11:33:10.3410940+02:00||;True|2024-10-29T09:25:47.9967391+02:00||;</History>
     <LastFailureDetails />
   </PropertyGroup>
 </Project>
