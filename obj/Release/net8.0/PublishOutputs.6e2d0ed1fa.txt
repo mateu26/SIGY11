@@ -1,8 +1,0 @@
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\SIGY11.exe
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\web.config
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\appsettings.Development.json
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\appsettings.json
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\SIGY11.dll
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\SIGY11.deps.json
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\SIGY11.runtimeconfig.json
-C:\Users\Margaret\source\repos\SIGY11\obj\Release\net8.0\PubTmp\Out\SIGY11.pdb
